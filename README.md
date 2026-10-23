@@ -72,6 +72,10 @@ The example config points at `examples/`: a two-screen "Add Product" design and 
 
 `designFile` accepts a Figma `/nodes` response, a single node, or an already-normalized `{ "screens": [...] }`. That last form lets you produce the spec some other way, e.g. by asking Claude Code with the Figma MCP to fill it in.
 
+## Docs
+
+Overview, architecture, decision records, backlog and ideas are in [docs/](docs/README.md).
+
 ## Ideas for next steps
 
 - **Expose it as an MCP server** (`analyze_feature`, `get_design_spec`, `scan_backend`) so it can run inside Claude Code next to the Figma MCP, and so frontend devs can ask follow-up questions about a report.
