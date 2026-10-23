@@ -1,0 +1,26 @@
+{
+  "name": "design-mediator",
+  "version": "0.1.0",
+  "description": "Compare Figma designs against what the backend actually has, and produce a gap report + frontend contract.",
+  "type": "module",
+  "bin": {
+    "mediator": "./src/cli.ts"
+  },
+  "scripts": {
+    "mediator": "tsx src/cli.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.1.0",
+    "fast-glob": "^3.3.3",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

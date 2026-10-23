@@ -1,0 +1,34 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Migrated from legacy `tbl_item`. Not every legacy column has been brought over yet.
+model Product {
+  id          String        @id @default(uuid())
+  name        String        @db.VarChar(120)
+  sku         String        @unique
+  priceCents  Int
+  status      ProductStatus @default(DRAFT)
+  categoryId  String
+  category    Category      @relation(fields: [categoryId], references: [id])
+  weightGrams Int
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+}
+
+enum ProductStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+model Category {
+  id       String    @id @default(uuid())
+  name     String
+  products Product[]
+}

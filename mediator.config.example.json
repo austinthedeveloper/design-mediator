@@ -1,0 +1,22 @@
+{
+  "model": "claude-opus-5-5",
+  "effort": "high",
+  "backendBudgetChars": 200000,
+  "outDir": "mediator-out",
+  "repos": [
+    { "name": "monorepo", "path": "examples/legacy-monorepo" }
+  ],
+  "features": {
+    "add-product": {
+      "description": "Merchants create a product in two steps: details, then media & inventory.",
+      "designFile": "examples/add-product.figma.json",
+      "keywords": ["item", "tbl_item", "category"]
+    },
+    "add-product-live": {
+      "description": "Same feature, pulled live from Figma (needs FIGMA_TOKEN).",
+      "figma": { "fileKey": "YOUR_FILE_KEY", "nodeIds": ["1:2"] },
+      "repos": ["monorepo"],
+      "keywords": ["item", "tbl_item", "category"]
+    }
+  }
+}

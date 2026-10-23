@@ -1,0 +1,352 @@
+{
+  "name": "Commerce App",
+  "nodes": {
+    "1:2": {
+      "document": {
+        "id": "1:2",
+        "name": "Add Product",
+        "type": "SECTION",
+        "children": [
+          {
+            "id": "10:33",
+            "name": "Add Product / Details",
+            "type": "FRAME",
+            "children": [
+              {
+                "id": "10:1",
+                "name": "Heading",
+                "type": "TEXT",
+                "characters": "Add product"
+              },
+              {
+                "id": "10:2",
+                "name": "Subheading",
+                "type": "TEXT",
+                "characters": "Basic information"
+              },
+              {
+                "id": "10:4",
+                "name": "Input / Text",
+                "type": "INSTANCE",
+                "children": [
+                  {
+                    "id": "10:5",
+                    "name": "Label",
+                    "type": "TEXT",
+                    "characters": "Product name *"
+                  },
+                  {
+                    "id": "10:3",
+                    "name": "Placeholder",
+                    "type": "TEXT",
+                    "characters": "e.g. Classic Tee"
+                  }
+                ]
+              },
+              {
+                "id": "10:7",
+                "name": "Input / Rich text editor",
+                "type": "INSTANCE",
+                "children": [
+                  {
+                    "id": "10:8",
+                    "name": "Label",
+                    "type": "TEXT",
+                    "characters": "Description"
+                  },
+                  {
+                    "id": "10:6",
+                    "name": "Helper",
+                    "type": "TEXT",
+                    "characters": "Shown on the product page. Max 2,000 characters."
+                  }
+                ]
+              },
+              {
+                "id": "10:10",
+                "name": "Input / Currency",
+                "type": "INSTANCE",
+                "children": [
+                  {
+                    "id": "10:11",
+                    "name": "Label",
+                    "type": "TEXT",
+                    "characters": "Price *"
+                  },
+                  {
+                    "id": "10:9",
+                    "name": "Placeholder",
+                    "type": "TEXT",
+                    "characters": "$0.00"
+                  }
+                ]
+              },
+              {
+                "id": "10:13",
+                "name": "Input / Currency",
+                "type": "INSTANCE",
+                "children": [
+                  {
+                    "id": "10:14",
+                    "name": "Label",
+                    "type": "TEXT",
+                    "characters": "Compare-at price"
+                  },
+                  {
+                    "id": "10:12",
+                    "name": "Helper",
+                    "type": "TEXT",
+                    "characters": "Original price, shown crossed out"
+                  }
+                ]
+              },
+              {
+                "id": "10:16",
+                "name": "Input / Text",
+                "type": "INSTANCE",
+                "children": [
+                  {
+                    "id": "10:17",
+                    "name": "Label",
+                    "type": "TEXT",
+                    "characters": "SKU"
+                  },
+                  {
+                    "id": "10:15",
+                    "name": "Helper",
+                    "type": "TEXT",
+                    "characters": "Leave blank to auto-generate"
+                  }
+                ]
+              },
+              {
+                "id": "10:19",
+                "name": "Select / Dropdown",
+                "type": "INSTANCE",
+                "children": [
+                  {
+                    "id": "10:20",
+                    "name": "Label",
+                    "type": "TEXT",
+                    "characters": "Category *"
+                  },
+                  {
+                    "id": "10:18",
+                    "name": "Placeholder",
+                    "type": "TEXT",
+                    "characters": "Choose a category"
+                  }
+                ]
+              },
+              {
+                "id": "10:23",
+                "name": "Tag input",
+                "type": "INSTANCE",
+                "children": [
+                  {
+                    "id": "10:24",
+                    "name": "Label",
+                    "type": "TEXT",
+                    "characters": "Tags"
+                  },
+                  {
+                    "id": "10:21",
+                    "name": "Chip",
+                    "type": "TEXT",
+                    "characters": "summer"
+                  },
+                  {
+                    "id": "10:22",
+                    "name": "Chip",
+                    "type": "TEXT",
+                    "characters": "cotton"
+                  }
+                ]
+              },
+              {
+                "id": "10:26",
+                "name": "Toggle",
+                "type": "INSTANCE",
+                "children": [
+                  {
+                    "id": "10:27",
+                    "name": "Label",
+                    "type": "TEXT",
+                    "characters": "Active"
+                  },
+                  {
+                    "id": "10:25",
+                    "name": "Helper",
+                    "type": "TEXT",
+                    "characters": "Inactive products are hidden from the storefront"
+                  }
+                ]
+              },
+              {
+                "id": "10:32",
+                "name": "Footer",
+                "type": "FRAME",
+                "children": [
+                  {
+                    "id": "10:28",
+                    "name": "Button / Secondary",
+                    "type": "INSTANCE",
+                    "children": [
+                      {
+                        "id": "10:29",
+                        "name": "Label",
+                        "type": "TEXT",
+                        "characters": "Cancel"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "10:30",
+                    "name": "Button / Primary",
+                    "type": "INSTANCE",
+                    "children": [
+                      {
+                        "id": "10:31",
+                        "name": "Label",
+                        "type": "TEXT",
+                        "characters": "Next: media & inventory"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "10:53",
+            "name": "Add Product / Media & Inventory",
+            "type": "FRAME",
+            "children": [
+              {
+                "id": "10:34",
+                "name": "Heading",
+                "type": "TEXT",
+                "characters": "Media & inventory"
+              },
+              {
+                "id": "10:36",
+                "name": "Upload / Dropzone",
+                "type": "INSTANCE",
+                "children": [
+                  {
+                    "id": "10:37",
+                    "name": "Label",
+                    "type": "TEXT",
+                    "characters": "Product images"
+                  },
+                  {
+                    "id": "10:35",
+                    "name": "Helper",
+                    "type": "TEXT",
+                    "characters": "Up to 8 images. First image is the cover. JPG or PNG, max 5MB."
+                  }
+                ]
+              },
+              {
+                "id": "10:38",
+                "name": "Checkbox",
+                "type": "INSTANCE",
+                "children": [
+                  {
+                    "id": "10:39",
+                    "name": "Label",
+                    "type": "TEXT",
+                    "characters": "Track inventory"
+                  }
+                ]
+              },
+              {
+                "id": "10:41",
+                "name": "Input / Stepper",
+                "type": "INSTANCE",
+                "children": [
+                  {
+                    "id": "10:42",
+                    "name": "Label",
+                    "type": "TEXT",
+                    "characters": "Quantity on hand"
+                  },
+                  {
+                    "id": "10:40",
+                    "name": "Placeholder",
+                    "type": "TEXT",
+                    "characters": "0"
+                  }
+                ]
+              },
+              {
+                "id": "10:46",
+                "name": "Select / Dropdown",
+                "type": "INSTANCE",
+                "children": [
+                  {
+                    "id": "10:47",
+                    "name": "Label",
+                    "type": "TEXT",
+                    "characters": "Low stock alert"
+                  },
+                  {
+                    "id": "10:43",
+                    "name": "Option",
+                    "type": "TEXT",
+                    "characters": "Off"
+                  },
+                  {
+                    "id": "10:44",
+                    "name": "Option",
+                    "type": "TEXT",
+                    "characters": "5 units"
+                  },
+                  {
+                    "id": "10:45",
+                    "name": "Option",
+                    "type": "TEXT",
+                    "characters": "10 units"
+                  }
+                ]
+              },
+              {
+                "id": "10:52",
+                "name": "Footer",
+                "type": "FRAME",
+                "children": [
+                  {
+                    "id": "10:48",
+                    "name": "Button / Secondary",
+                    "type": "INSTANCE",
+                    "children": [
+                      {
+                        "id": "10:49",
+                        "name": "Label",
+                        "type": "TEXT",
+                        "characters": "Back"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "10:50",
+                    "name": "Button / Primary",
+                    "type": "INSTANCE",
+                    "children": [
+                      {
+                        "id": "10:51",
+                        "name": "Label",
+                        "type": "TEXT",
+                        "characters": "Save product"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  }
+}
