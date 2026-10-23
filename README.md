@@ -39,6 +39,16 @@ npm run mediator -- analyze add-product           # full report → mediator-out
 
 The example config points at `examples/`: a two-screen "Add Product" design and a small fake monorepo, with a migrated Prisma model, a NestJS DTO and controller, and the legacy SQL table. The gaps are planted on purpose: description, compare-at price, tags, images and inventory exist in the legacy table or the design but not in the new API; `weightGrams` is required by the API but has no field in the design; price is in cents vs. dollars; "Active" is a toggle where the backend has a status enum.
 
+### Pointing it at your own monorepo
+
+1. Clone this repo anywhere (it doesn't need to live inside the monorepo) and run `npm install`. Requires Node 20+.
+2. In `mediator.config.json`, set `repos[].path` to the monorepo. Use an absolute path or one relative to the config file.
+3. Add a feature with a `figma` source (needs `FIGMA_TOKEN`) or a `designFile`.
+4. Run `scan` first and check that the snippets it picks are the right models, DTOs and controllers. If they aren't, add `keywords` (legacy table names help a lot) or set `include` globs for that repo.
+5. Run `analyze --dry-run` and skim `prompt.txt`, then run `analyze`.
+
+`mediator.config.json` is gitignored, so each machine keeps its own paths.
+
 ## Config
 
 ```jsonc
