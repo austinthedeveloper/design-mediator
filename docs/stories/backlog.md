@@ -36,6 +36,12 @@
 | S-28 | Send questions to Slack, Jira or Linear | Integration | ⬜ |
 | S-29 | Unit tests for the extractor and scanner | Quality | ⬜ ⭐ |
 | S-30 | Eval set of known gaps to measure analysis quality | Quality | ⬜ |
+| S-31 | Local web UI: setup, features, run | Web UI | ✅ |
+| S-32 | Save keys from the UI, with a Test button | Web UI | 🟡 |
+| S-33 | Folder browser for repos and design files | Web UI | ✅ |
+| S-34 | Analysis results page | Web UI | ✅ |
+| S-35 | Live streaming progress and a Cancel button | Web UI | ⬜ |
+| S-36 | Run history per feature in the UI | Web UI | ⬜ |
 
 ---
 
@@ -195,3 +201,41 @@ See [ideas/ci-and-notifications.md](../ideas/ci-and-notifications.md).
 As the owner, I want to know if a prompt or model change made the analysis better or worse.
 - [ ] 3–5 fixture features with a hand-written list of expected gaps
 - [ ] A script that scores recall and precision of `fields[].status` against the expected list
+
+## Epic: Web UI
+
+### S-31 · Local web UI ✅
+As a frontend dev, I want to set up and run the mediator from a browser page instead of editing JSON and exporting variables.
+- [x] `npm run ui` starts a server on 127.0.0.1 and opens the browser ([ADR 0008](../adr/0008-local-web-ui.md))
+- [x] Setup, Features and Run tabs. Reads and writes the same `mediator.config.json` as the CLI.
+- [x] Figma links are parsed into file key and node id, with an inline error when the link has no node
+- [x] Previews of the design and the backend scan before running an analysis
+- [x] Works at phone width with no sideways scrolling, and follows the system light or dark theme
+- [x] Rejects foreign `Host` headers and writes that aren't JSON
+
+### S-32 · Credentials from the UI 🟡
+- [x] Save, replace and remove the Anthropic key and Figma token. Stored in `~/.design-mediator/credentials.json` with mode 600.
+- [x] Shows where each key comes from (env or saved) and only its last 4 characters
+- [x] Anthropic Test calls the Models API and explains 401, 403, 404, 429 and connection errors in plain words (checked with a fake key, which got a real 401)
+- [ ] Test succeeds with a real Anthropic key
+- [ ] Figma Test (`/v1/me`) checked with a real token
+
+### S-33 · Folder browser ✅
+- [x] Browse from the home folder, go up a level, jump home, or type a path
+- [x] Git repos are tagged. Hidden folders and `node_modules` are skipped.
+- [x] `.json` file picking for local design exports
+- [x] Adding a repo names it after the folder. Renaming or removing it updates the features that use it.
+
+### S-34 · Results page ✅
+- [x] Loads the last finished analysis for the selected feature
+- [x] Summary, a field table with a status filter, endpoints, questions sorted by priority, risks, contract
+- [x] Copy buttons for questions, `contract.ts` and `mock.json`. Download `report.md`.
+- [x] Analysis runs as a background job with progress lines. Errors are shown with the log.
+- [ ] Shown with a real (not sample) analysis (S-19)
+
+### S-35 · Live progress and cancel ⬜
+- [ ] Stream the model's progress (for example "fields mapped so far") instead of three fixed steps
+- [ ] Cancel a running analysis, aborting the API request
+
+### S-36 · Run history ⬜
+- [ ] List past runs per feature and open any of them (pairs with [diff mode](../ideas/diff-mode.md))

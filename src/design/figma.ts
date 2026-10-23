@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { getCredential } from "../credentials.ts";
 import type { DesignField, DesignScreen, DesignSpec, FieldKind, FigmaSource } from "../types.ts";
 
 /** The subset of the Figma REST node shape we read. */
@@ -17,8 +18,8 @@ interface FigmaNodesResponse {
 }
 
 export async function fetchFigmaNodes(source: FigmaSource): Promise<FigmaNode[]> {
-  const token = process.env.FIGMA_TOKEN;
-  if (!token) throw new Error("FIGMA_TOKEN is not set (Figma > Settings > Personal access tokens)");
+  const token = getCredential("figmaToken");
+  if (!token) throw new Error("No Figma token: set FIGMA_TOKEN or save one in the UI (Figma > Settings > Personal access tokens)");
 
   const url = new URL(`https://api.figma.com/v1/files/${source.fileKey}/nodes`);
   url.searchParams.set("ids", source.nodeIds.join(","));

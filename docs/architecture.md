@@ -35,8 +35,12 @@
 
 | File | What it does |
 |---|---|
-| `src/cli.ts` | Parses arguments, runs the `design`, `scan` and `analyze` commands, writes the output files. |
-| `src/config.ts` | Loads `mediator.config.json` and resolves paths relative to it. |
+| `src/cli.ts` | Parses arguments and runs the `design`, `scan` and `analyze` commands. |
+| `src/server.ts` | The local web UI server (`npm run ui`): JSON API, folder browser, analysis jobs. |
+| `ui/index.html` | The web UI. One HTML file with plain JS and no build step. |
+| `src/pipeline.ts` | The three stages plus writing output files. The CLI and the server both call this. |
+| `src/config.ts` | Loads, validates and saves `mediator.config.json`, and resolves paths relative to it. |
+| `src/credentials.ts` | Anthropic and Figma keys: environment variables first, then `~/.design-mediator/credentials.json`. |
 | `src/types.ts` | Shared types: `DesignSpec`, `DesignField`, `BackendSnippet`, the config shape. |
 | `src/design/figma.ts` | Fetches Figma nodes and turns frames into screens with fields, actions and copy. |
 | `src/design/index.ts` | Picks the design source (Figma or a file) and pulls search keywords out of the design. |
@@ -44,6 +48,20 @@
 | `src/backend/index.ts` | Scans every repo the feature uses and picks snippets within the character budget. |
 | `src/analyze.ts` | The analysis schema (Zod), the system prompt, building the prompt, and the Claude call. |
 | `src/report.ts` | Renders `Analysis` as a markdown report. |
+
+## Web UI
+
+```
+browser (ui/index.html) ──JSON──► src/server.ts (127.0.0.1 only) ──► pipeline.ts / config.ts / credentials.ts
+```
+
+- **API**: `GET/PUT /api/config` · `GET/PUT /api/credentials`, plus `POST /api/credentials/test` · `GET /api/fs?path=&files=json` · `POST /api/features/:name/{design,scan,analyze}` · `GET /api/features/:name/last-run` · `GET /api/jobs/:id`.
+- **Analysis runs as a job.** `analyze` returns a job id right away. The page polls `/api/jobs/:id` every 1.5 s for progress lines, then loads `last-run`. Jobs live only in memory, so if the server restarts the page falls back to the last saved run on disk.
+- **Keys never go back to the browser.** It only gets whether a key is set, where it came from (env or file), and the last 4 characters.
+- **Local-only safeguards**: the server listens on `127.0.0.1` only, rejects any `Host` header other than `localhost` or `127.0.0.1` (this blocks DNS-rebinding attacks), and requires `content-type: application/json` on writes, which a cross-site form can't send.
+- **Folder browser**: the server lists folders (and `.json` files when asked). Browsers don't give web pages real file paths, so the server does the browsing.
+
+See [ADR 0008](adr/0008-local-web-ui.md).
 
 ## Stage details
 

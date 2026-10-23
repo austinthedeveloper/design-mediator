@@ -10,4 +10,5 @@ Short records of decisions that shape the project: the context, what was decided
 | [0004](0004-keyword-ranked-snippets.md) | Pick backend context by keyword-ranked snippets within a budget | Accepted, revisit |
 | [0005](0005-single-structured-call.md) | One structured-output Claude call per feature | Accepted |
 | [0006](0006-streaming-and-fallbacks.md) | Stream the call and opt into server-side fallback | Accepted |
-| [0007](0007-local-config.md) | Keep per-machine config in a gitignored JSON file | Accepted |
+| [0007](0007-local-config.md) | Keep per-machine config in a gitignored JSON file | Accepted, amended by 0008 |
+| [0008](0008-local-web-ui.md) | Add a local web UI, with keys stored in the user's home folder | Accepted |

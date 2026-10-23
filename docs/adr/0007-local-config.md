@@ -1,6 +1,6 @@
 # 0007. Keep per-machine config in a gitignored JSON file
 
-- **Status**: Accepted
+- **Status**: Accepted, amended by [0008](0008-local-web-ui.md) (keys can also be saved from the UI)
 - **Date**: 2026-10-22
 
 ## Context

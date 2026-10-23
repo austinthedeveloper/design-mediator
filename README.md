@@ -21,12 +21,27 @@ monorepo(s) ──► backend scanner ─────────┴──► re
 2. **Backend**: globs schema-like files in each repo, splits them into declarations (models, tables, classes, routes) and ranks them by how often they mention words from the design. Only the top snippets, up to `backendBudgetChars`, go to the model.
 3. **Analysis**: one Claude call with a strict JSON schema. The prompt tells the model not to assume a field exists unless it has seen it in the code.
 
-## Usage
+## Web UI
 
 ```bash
 npm install
-cp mediator.config.example.json mediator.config.json
-export ANTHROPIC_API_KEY=...   # or `ant auth login`
+npm run ui
+```
+
+This opens `http://localhost:4777` in your browser. It runs only on your computer.
+
+- **Setup**: paste your Anthropic API key and Figma token, with a Test button for each. Add repos with a folder browser. Pick the model and effort.
+- **Features**: paste a Figma link (right-click a frame or section → *Copy link to selection*), or browse to a saved design export. Choose which repos to check and add extra search words.
+- **Run**: preview what was pulled from the design and which backend code will be sent, then run the analysis. The results show on the page with a status filter. You can copy the questions and contract, or download `report.md`.
+
+Keys you save are stored in `~/.design-mediator/credentials.json`, readable only by your user, never in the project. Environment variables still win if they're set. The UI reads and writes the same `mediator.config.json` the CLI uses. Use `npm run ui -- --port 5000` for another port, or `--no-open` to skip opening the browser.
+
+## Command line
+
+```bash
+npm install
+cp mediator.config.example.json mediator.config.json   # or set it up in the web UI
+export ANTHROPIC_API_KEY=...   # or `ant auth login`, or save it in the web UI
 export FIGMA_TOKEN=...         # only for features with a "figma" source
 ```
 
@@ -40,6 +55,8 @@ npm run mediator -- analyze add-product           # full report → mediator-out
 The example config points at `examples/`: a two-screen "Add Product" design and a small fake monorepo, with a migrated Prisma model, a NestJS DTO and controller, and the legacy SQL table. The gaps are planted on purpose: description, compare-at price, tags, images and inventory exist in the legacy table or the design but not in the new API; `weightGrams` is required by the API but has no field in the design; price is in cents vs. dollars; "Active" is a toggle where the backend has a status enum.
 
 ### Pointing it at your own monorepo
+
+The easiest way is `npm run ui`: add the repo on Setup, then the feature on Features. To do it by hand:
 
 1. Clone this repo anywhere (it doesn't need to live inside the monorepo) and run `npm install`. Requires Node 20+.
 2. In `mediator.config.json`, set `repos[].path` to the monorepo. Use an absolute path or one relative to the config file.

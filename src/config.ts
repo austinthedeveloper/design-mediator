@@ -10,13 +10,37 @@ export interface LoadedConfig extends MediatorConfig {
 export function loadConfig(configPath: string): LoadedConfig {
   const abs = path.resolve(configPath);
   if (!fs.existsSync(abs)) {
-    throw new Error(`Config not found: ${abs} (copy mediator.config.example.json to get started)`);
+    throw new Error(`Config not found: ${abs} (copy mediator.config.example.json, or run \`npm run ui\` to set one up)`);
   }
   const raw = JSON.parse(fs.readFileSync(abs, "utf8")) as MediatorConfig;
-  if (!Array.isArray(raw.repos) || !raw.features) {
-    throw new Error(`${abs}: expected "repos" (array) and "features" (object)`);
-  }
+  validateConfig(raw, abs);
   return { ...raw, baseDir: path.dirname(abs) };
+}
+
+/** Like loadConfig, but a missing file is an empty config (the UI creates it on first save). */
+export function loadConfigOrEmpty(configPath: string): LoadedConfig {
+  const abs = path.resolve(configPath);
+  if (!fs.existsSync(abs)) return { repos: [], features: {}, baseDir: path.dirname(abs) };
+  return loadConfig(abs);
+}
+
+export function saveConfig(configPath: string, config: MediatorConfig): void {
+  const abs = path.resolve(configPath);
+  validateConfig(config, abs);
+  const { baseDir: _ignored, ...plain } = config as LoadedConfig;
+  fs.writeFileSync(abs, JSON.stringify(plain, null, 2) + "\n");
+}
+
+function validateConfig(raw: MediatorConfig, where: string): void {
+  if (!Array.isArray(raw.repos) || typeof raw.features !== "object" || raw.features === null) {
+    throw new Error(`${where}: expected "repos" (array) and "features" (object)`);
+  }
+  const names = new Set<string>();
+  for (const repo of raw.repos) {
+    if (!repo.name || !repo.path) throw new Error(`${where}: every repo needs a "name" and a "path"`);
+    if (names.has(repo.name)) throw new Error(`${where}: repo name "${repo.name}" is used twice`);
+    names.add(repo.name);
+  }
 }
 
 export function getFeature(config: LoadedConfig, name: string): FeatureConfig {

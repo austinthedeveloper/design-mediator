@@ -1,12 +1,8 @@
 #!/usr/bin/env -S npx tsx
-import fs from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
-import { analyze, buildPrompt } from "./analyze.ts";
-import { scanBackend } from "./backend/index.ts";
-import { getFeature, loadConfig, resolveFrom } from "./config.ts";
-import { designKeywords, loadDesign } from "./design/index.ts";
-import { renderReport } from "./report.ts";
+import { loadConfig } from "./config.ts";
+import { runAnalyze, runDesign, runScan } from "./pipeline.ts";
 
 const USAGE = `design-mediator: compare Figma designs with what the backend actually has.
 
@@ -14,6 +10,7 @@ Usage:
   mediator design  <feature>             Print the fields extracted from the design
   mediator scan    <feature>             Print the backend code that looks relevant
   mediator analyze <feature> [--dry-run] Run the AI gap analysis and write a report
+  npm run ui                             Open the web UI to set up repos, keys and features
 
 Options:
   -c, --config <path>   Config file (default: mediator.config.json)
@@ -37,18 +34,14 @@ async function main() {
   }
 
   const config = loadConfig(values.config!);
-  const feature = getFeature(config, featureName);
-  const design = await loadDesign(config, featureName, feature);
 
   if (command === "design") {
-    console.log(JSON.stringify(design, null, 2));
+    console.log(JSON.stringify(await runDesign(config, featureName), null, 2));
     return;
   }
 
-  const keywords = designKeywords(design, feature.keywords);
-  const { selected, totalCandidates } = await scanBackend(config, feature, keywords);
-
   if (command === "scan") {
+    const { keywords, selected, totalCandidates } = await runScan(config, featureName);
     console.log(`Keywords: ${keywords.join(", ")}`);
     console.log(`${selected.length} of ${totalCandidates} candidate snippets selected:\n`);
     for (const s of selected) {
@@ -59,26 +52,16 @@ async function main() {
 
   if (command !== "analyze") throw new Error(`Unknown command "${command}"\n\n${USAGE}`);
 
-  const outDir = path.join(resolveFrom(config, config.outDir ?? "mediator-out"), featureName);
-  fs.mkdirSync(outDir, { recursive: true });
-  const prompt = buildPrompt(design, selected, feature.description);
-  fs.writeFileSync(path.join(outDir, "design.json"), JSON.stringify(design, null, 2));
-
-  if (values["dry-run"]) {
-    fs.writeFileSync(path.join(outDir, "prompt.txt"), prompt);
-    console.log(`Dry run: prompt (${prompt.length.toLocaleString()} chars) written to ${path.join(outDir, "prompt.txt")}`);
-    return;
+  const dryRun = values["dry-run"];
+  const result = await runAnalyze(config, featureName, {
+    dryRun,
+    onProgress: (m) => console.error(`${m}...`),
+  });
+  if (dryRun) {
+    console.log(`Dry run: prompt (${result.prompt.length.toLocaleString()} chars) written to ${path.join(result.outDir, "prompt.txt")}`);
+  } else {
+    console.log(`Report written to ${path.join(result.outDir, "report.md")}`);
   }
-
-  const model = config.model ?? "claude-opus-5-5";
-  console.error(`Analyzing ${design.screens.length} screen(s) against ${selected.length} backend snippet(s) with ${model}...`);
-  const analysis = await analyze(prompt, { model, effort: config.effort ?? "high" });
-
-  fs.writeFileSync(path.join(outDir, "analysis.json"), JSON.stringify(analysis, null, 2));
-  fs.writeFileSync(path.join(outDir, "contract.ts"), analysis.frontendContract.typescript);
-  fs.writeFileSync(path.join(outDir, "mock.json"), analysis.frontendContract.mockJson);
-  fs.writeFileSync(path.join(outDir, "report.md"), renderReport(design, analysis));
-  console.log(`Report written to ${path.join(outDir, "report.md")}`);
 }
 
 main().catch((err) => {

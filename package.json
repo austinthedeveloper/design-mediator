@@ -8,7 +8,8 @@
   },
   "scripts": {
     "mediator": "tsx src/cli.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "ui": "tsx src/server.ts"
   },
   "engines": {
     "node": ">=20"

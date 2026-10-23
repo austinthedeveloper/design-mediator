@@ -1,0 +1,657 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Design Mediator</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --panel-2: #f1f3f6; --text: #1b1f24; --muted: #5d6673;
+    --border: #dde1e7; --accent: #4f46e5; --accent-text: #ffffff; --accent-soft: #eef0ff;
+    --ok: #12805c; --ok-soft: #e3f5ee; --warn: #9a6200; --warn-soft: #fdf3dc;
+    --bad: #c0362c; --bad-soft: #fdecea; --info: #2463b8; --info-soft: #e7f0fc;
+    --mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111418; --panel: #1a1e24; --panel-2: #22272f; --text: #e6e9ee; --muted: #9aa3af;
+      --border: #2e343d; --accent: #8b85ff; --accent-text: #0f0f1a; --accent-soft: #26244a;
+      --ok: #4cc79a; --ok-soft: #173229; --warn: #f0b44c; --warn-soft: #352a14;
+      --bad: #f2776d; --bad-soft: #3a1d1b; --info: #74a8f0; --info-soft: #182a42;
+      color-scheme: dark;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  header { display: flex; align-items: center; gap: 24px; padding: 0 24px; height: 56px; background: var(--panel); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
+  header h1 { font-size: 16px; margin: 0; white-space: nowrap; }
+  nav { display: flex; gap: 4px; }
+  nav button { background: none; border: 0; padding: 8px 12px; border-radius: 6px; color: var(--muted); font: inherit; cursor: pointer; }
+  nav button.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  main { max-width: 1100px; margin: 0 auto; padding: 24px 16px 64px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 20px; margin-bottom: 16px; }
+  .card h2 { font-size: 15px; margin: 0 0 4px; }
+  .card > p.sub { margin: 0 0 16px; color: var(--muted); }
+  label { display: block; font-weight: 600; margin: 12px 0 4px; }
+  label .hint { font-weight: 400; color: var(--muted); }
+  input[type=text], input[type=password], input[type=number], select, textarea {
+    width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; background: var(--panel); color: var(--text); font: inherit;
+  }
+  textarea { min-height: 60px; resize: vertical; }
+  input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .row > .grow { flex: 1; min-width: 200px; }
+  button.btn { padding: 8px 14px; border-radius: 6px; border: 1px solid var(--border); background: var(--panel); color: var(--text); font: inherit; cursor: pointer; white-space: nowrap; }
+  button.btn:hover { background: var(--panel-2); }
+  button.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 600; }
+  button.btn.danger { color: var(--bad); }
+  button.btn:disabled { opacity: .5; cursor: default; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+  .pill.ok { background: var(--ok-soft); color: var(--ok); } .pill.warn { background: var(--warn-soft); color: var(--warn); }
+  .pill.bad { background: var(--bad-soft); color: var(--bad); } .pill.info { background: var(--info-soft); color: var(--info); }
+  .pill.muted { background: var(--panel-2); color: var(--muted); }
+  .msg { margin-top: 8px; font-size: 13px; } .msg.ok { color: var(--ok); } .msg.bad { color: var(--bad); }
+  .muted { color: var(--muted); }
+  .mono { font-family: var(--mono); font-size: 12.5px; word-break: break-all; }
+  .list { border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+  .list-item { display: flex; gap: 12px; align-items: center; padding: 10px 12px; border-top: 1px solid var(--border); }
+  .list-item:first-child { border-top: 0; }
+  .list-item .grow { flex: 1; min-width: 0; }
+  .empty { padding: 16px; color: var(--muted); text-align: center; }
+  .split { display: grid; grid-template-columns: 240px 1fr; gap: 16px; align-items: start; }
+  .feature-list button { display: block; width: 100%; text-align: left; padding: 10px 12px; border: 0; border-top: 1px solid var(--border); background: none; color: var(--text); font: inherit; cursor: pointer; }
+  .feature-list button:first-child { border-top: 0; }
+  .feature-list button.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .checks { display: flex; flex-wrap: wrap; gap: 12px; }
+  .checks label { display: flex; gap: 6px; align-items: center; font-weight: 400; margin: 0; }
+  .seg { display: inline-flex; border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
+  .seg button { border: 0; background: var(--panel); color: var(--muted); padding: 6px 12px; font: inherit; cursor: pointer; }
+  .seg button.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 8px; border-top: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; border-top: 0; }
+  .table-wrap { overflow-x: auto; }
+  pre { background: var(--panel-2); border-radius: 8px; padding: 12px; overflow: auto; font: 12.5px/1.5 var(--mono); max-height: 420px; margin: 0; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { padding: 2px 8px; border-radius: 999px; background: var(--panel-2); font-size: 12px; }
+  button.chip { border: 1px solid transparent; cursor: pointer; color: var(--text); font: inherit; font-size: 12px; }
+  button.chip.active { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+  .log { font: 12.5px/1.6 var(--mono); }
+  .log div::before { content: "› "; color: var(--muted); }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; vertical-align: -2px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  details summary { cursor: pointer; }
+  .q { padding: 10px 0; border-top: 1px solid var(--border); display: flex; gap: 10px; }
+  .q:first-child { border-top: 0; }
+  dialog { border: 1px solid var(--border); border-radius: 12px; padding: 0; width: min(640px, calc(100vw - 32px)); background: var(--panel); color: var(--text); }
+  dialog::backdrop { background: rgb(0 0 0 / .4); }
+  .dlg-head { padding: 16px 20px; border-bottom: 1px solid var(--border); }
+  .dlg-body { height: 360px; overflow: auto; }
+  .dlg-foot { padding: 12px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; justify-content: flex-end; align-items: center; }
+  .fs-item { display: flex; gap: 8px; align-items: center; width: 100%; padding: 8px 20px; border: 0; background: none; color: var(--text); font: inherit; text-align: left; cursor: pointer; }
+  .fs-item:hover { background: var(--panel-2); }
+  .fs-item.selected { background: var(--accent-soft); }
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 8px; font-weight: 600; opacity: 0; transition: opacity .2s; pointer-events: none; z-index: 20; }
+  .toast.show { opacity: 1; }
+  .stack > * + * { margin-top: 16px; }
+  @media (max-width: 760px) {
+    header { gap: 8px; padding: 0 16px; overflow-x: auto; }
+    .split { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Design Mediator</h1>
+  <nav id="nav">
+    <button data-tab="setup">Setup</button>
+    <button data-tab="features">Features</button>
+    <button data-tab="run">Run</button>
+  </nav>
+</header>
+<main id="main"></main>
+
+<dialog id="fsDialog">
+  <div class="dlg-head">
+    <strong id="fsTitle">Choose a folder</strong>
+    <div class="row" style="margin-top:8px">
+      <input type="text" id="fsPath" class="grow mono" aria-label="Folder path">
+      <button class="btn" id="fsGo">Go</button>
+    </div>
+  </div>
+  <div class="dlg-body" id="fsList"></div>
+  <div class="dlg-foot">
+    <span class="muted grow" id="fsStatus" style="flex:1"></span>
+    <button class="btn" id="fsCancel">Cancel</button>
+    <button class="btn primary" id="fsChoose">Choose this folder</button>
+  </div>
+</dialog>
+<div class="toast" id="toast"></div>
+
+<script>
+// ---------- tiny helpers ----------
+const $ = (s) => document.querySelector(s);
+function el(tag, attrs = {}, ...children) {
+  const node = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (v == null || v === false) continue;
+    if (k.startsWith("on")) node.addEventListener(k.slice(2), v);
+    else if (k === "class") node.className = v;
+    else if (k === "value") node.value = v;
+    else if (k === "checked") node.checked = v;
+    else node.setAttribute(k, v === true ? "" : v);
+  }
+  for (const c of children.flat()) if (c != null && c !== false) node.append(c instanceof Node ? c : String(c));
+  return node;
+}
+async function api(method, url, body) {
+  const res = await fetch(url, {
+    method,
+    headers: body !== undefined ? { "content-type": "application/json" } : {},
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+  return data;
+}
+function toast(text) {
+  const t = $("#toast"); t.textContent = text; t.classList.add("show");
+  clearTimeout(toast.timer); toast.timer = setTimeout(() => t.classList.remove("show"), 2200);
+}
+function copy(text) { navigator.clipboard.writeText(text).then(() => toast("Copied")); }
+function download(name, text) {
+  const a = el("a", { href: URL.createObjectURL(new Blob([text], { type: "text/plain" })), download: name });
+  a.click(); URL.revokeObjectURL(a.href);
+}
+const basename = (p) => p.replace(/[\\/]+$/, "").split(/[\\/]/).pop();
+const slug = (s) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+function store(key, value) { try { localStorage.setItem(key, value); } catch {} }
+function forget(key) { try { localStorage.removeItem(key); } catch {} }
+function recall(key) { try { return localStorage.getItem(key); } catch { return null; } }
+
+/** figma.com/design/<key>/<name>?node-id=1-2 → { fileKey, nodeIds: ["1:2"] } */
+function parseFigmaLink(link) {
+  let url;
+  try { url = new URL(link.trim()); } catch { return { error: "That doesn't look like a link." }; }
+  if (!/(^|\.)figma\.com$/.test(url.hostname)) return { error: "Expected a figma.com link." };
+  const m = url.pathname.match(/^\/(?:design|file|proto|board)\/([A-Za-z0-9]+)/);
+  if (!m) return { error: "Couldn't find a file key in that link." };
+  const nodeId = url.searchParams.get("node-id");
+  if (!nodeId) return { error: "The link needs a node. In Figma, right-click the frame or section → Copy link to selection." };
+  return { fileKey: m[1], nodeIds: [nodeId.replace(/-/g, ":")] };
+}
+const figmaLinkFor = (f) => f?.fileKey ? `https://www.figma.com/design/${f.fileKey}/?node-id=${(f.nodeIds?.[0] ?? "").replace(/:/g, "-")}` : "";
+
+// ---------- state ----------
+const state = {
+  tab: recall("dm.tab") || "setup",
+  config: null, configPath: "", configExists: false,
+  creds: null,
+  selectedFeature: recall("dm.feature") || null,
+  runFeature: recall("dm.runFeature") || null,
+  run: null,
+};
+
+async function loadConfig() {
+  const r = await api("GET", "/api/config");
+  state.config = { repos: [], features: {}, ...r.config };
+  state.configPath = r.path; state.configExists = r.exists;
+}
+async function saveConfig(message = "Saved") {
+  await api("PUT", "/api/config", state.config);
+  state.configExists = true;
+  toast(message);
+}
+async function loadCreds() { state.creds = await api("GET", "/api/credentials"); }
+
+// ---------- folder browser ----------
+const fsDlg = { mode: "folder", current: null, picked: null, resolve: null };
+function browse({ title, start, mode = "folder" }) {
+  fsDlg.mode = mode; fsDlg.picked = null;
+  $("#fsTitle").textContent = title;
+  $("#fsChoose").textContent = mode === "folder" ? "Choose this folder" : "Choose file";
+  $("#fsDialog").showModal();
+  openDir(start || "");
+  return new Promise((resolve) => { fsDlg.resolve = resolve; });
+}
+async function openDir(p) {
+  const list = $("#fsList");
+  list.replaceChildren(el("div", { class: "empty" }, el("span", { class: "spinner" })));
+  try {
+    const r = await api("GET", `/api/fs?path=${encodeURIComponent(p)}${fsDlg.mode === "json" ? "&files=json" : ""}`);
+    fsDlg.current = r; fsDlg.picked = null;
+    $("#fsPath").value = r.path;
+    $("#fsStatus").textContent = fsDlg.mode === "folder" ? (r.isRepo ? "This folder is a git repo" : "") : "Pick a .json design export";
+    $("#fsChoose").disabled = fsDlg.mode === "json";
+    const items = [];
+    if (r.parent) items.push(el("button", { class: "fs-item", onclick: () => openDir(r.parent) }, "⬆︎ ", el("span", { class: "muted" }, "Up one level")));
+    if (r.path !== r.home) items.push(el("button", { class: "fs-item", onclick: () => openDir(r.home) }, "⌂ ", el("span", { class: "muted" }, "Home")));
+    for (const f of r.folders) {
+      items.push(el("button", { class: "fs-item", ondblclick: () => openDir(f.path), onclick: () => openDir(f.path) },
+        "📁 ", el("span", { style: "flex:1" }, f.name), f.isRepo ? el("span", { class: "pill info" }, "git") : null));
+    }
+    for (const f of r.files) {
+      const btn = el("button", { class: "fs-item", onclick: () => {
+        list.querySelectorAll(".selected").forEach((n) => n.classList.remove("selected"));
+        btn.classList.add("selected"); fsDlg.picked = f.path; $("#fsChoose").disabled = false;
+      }, ondblclick: () => finishBrowse(f.path) }, "📄 ", f.name);
+      items.push(btn);
+    }
+    if (!r.folders.length && !r.files.length) items.push(el("div", { class: "empty" }, "Nothing in here"));
+    list.replaceChildren(...items);
+  } catch (err) {
+    list.replaceChildren(el("div", { class: "empty" }, err.message));
+  }
+}
+function finishBrowse(value) { $("#fsDialog").close(); fsDlg.resolve?.(value); fsDlg.resolve = null; }
+$("#fsGo").onclick = () => openDir($("#fsPath").value);
+$("#fsPath").onkeydown = (e) => { if (e.key === "Enter") openDir($("#fsPath").value); };
+$("#fsCancel").onclick = () => finishBrowse(null);
+$("#fsChoose").onclick = () => finishBrowse(fsDlg.mode === "folder" ? fsDlg.current?.path : fsDlg.picked);
+$("#fsDialog").addEventListener("cancel", () => { fsDlg.resolve?.(null); fsDlg.resolve = null; });
+
+// ---------- Setup tab ----------
+function credentialCard(name, title, help) {
+  const c = state.creds[name];
+  const input = el("input", { type: "password", placeholder: c.set ? `Saved (${c.hint}). Paste a new one to replace it.` : "Paste it here", autocomplete: "off" });
+  const msg = el("div", { class: "msg" });
+  const status = c.source === "env"
+    ? el("span", { class: "pill info" }, `From ${c.envVar} ${c.hint}`)
+    : c.set ? el("span", { class: "pill ok" }, `Saved ${c.hint}`) : el("span", { class: "pill muted" }, "Not set");
+  const save = async () => {
+    if (!input.value.trim()) return;
+    await api("PUT", "/api/credentials", { [name]: input.value });
+    await loadCreds(); render(); toast("Key saved");
+  };
+  const test = async (btn) => {
+    btn.disabled = true; msg.className = "msg"; msg.replaceChildren(el("span", { class: "spinner" }), " Testing…");
+    try {
+      if (input.value.trim()) await save();
+      const r = await api("POST", "/api/credentials/test", { name });
+      const m = document.querySelector(`[data-msg="${name}"]`) || msg;
+      m.className = `msg ${r.ok ? "ok" : "bad"}`; m.textContent = r.message;
+    } catch (err) { msg.className = "msg bad"; msg.textContent = err.message; }
+    btn.disabled = false;
+  };
+  msg.dataset.msg = name;
+  return el("div", { class: "card" },
+    el("div", { class: "row" }, el("h2", { style: "margin:0;flex:1" }, title), status),
+    el("p", { class: "sub" }, help),
+    c.source === "env" ? el("p", { class: "muted", style: "margin:0 0 8px" }, `The ${c.envVar} environment variable is set, so it's used instead of any saved key.`) : null,
+    el("div", { class: "row" },
+      el("div", { class: "grow" }, input),
+      el("button", { class: "btn primary", onclick: save }, "Save"),
+      el("button", { class: "btn", onclick: (e) => test(e.currentTarget) }, "Test"),
+      c.source === "file" ? el("button", { class: "btn danger", onclick: async () => {
+        await api("PUT", "/api/credentials", { [name]: "" }); await loadCreds(); render(); toast("Key removed");
+      } }, "Remove") : null),
+    msg);
+}
+
+function renderSetup() {
+  const cfg = state.config;
+  const repoList = cfg.repos.length
+    ? cfg.repos.map((r, i) => el("div", { class: "list-item" },
+        el("div", { class: "grow" },
+          el("input", { type: "text", value: r.name, "aria-label": "Repo name", style: "max-width:240px;font-weight:600", onchange: (e) => {
+            const old = r.name, next = slug(e.target.value) || old;
+            r.name = next; e.target.value = next;
+            for (const f of Object.values(cfg.features)) if (f.repos) f.repos = f.repos.map((n) => n === old ? next : n);
+            saveConfig("Repo renamed").catch((err) => toast(err.message));
+          } }),
+          el("div", { class: "mono muted", style: "margin-top:4px" }, r.path)),
+        el("button", { class: "btn", onclick: async () => {
+          const p = await browse({ title: `Choose the folder for "${r.name}"`, start: r.path });
+          if (p) { r.path = p; await saveConfig(); render(); }
+        } }, "Change…"),
+        el("button", { class: "btn danger", onclick: async () => {
+          if (!confirm(`Remove "${r.name}" from the list? Nothing on disk is deleted.`)) return;
+          cfg.repos.splice(i, 1);
+          for (const f of Object.values(cfg.features)) if (f.repos) f.repos = f.repos.filter((n) => n !== r.name);
+          await saveConfig("Repo removed"); render();
+        } }, "Remove")))
+    : [el("div", { class: "empty" }, "No repos yet. Add the monorepo (or each repo) the backend lives in.")];
+
+  const addRepo = async () => {
+    const p = await browse({ title: "Choose a repo folder", start: cfg.repos.at(-1)?.path });
+    if (!p) return;
+    let name = slug(basename(p)) || "repo", n = 2;
+    while (cfg.repos.some((r) => r.name === name)) name = `${slug(basename(p))}-${n++}`;
+    cfg.repos.push({ name, path: p });
+    await saveConfig("Repo added"); render();
+  };
+
+  const modelInput = el("input", { type: "text", list: "models", value: cfg.model ?? "claude-opus-5-5" });
+  const effortSel = el("select", {}, ...["low", "medium", "high", "xhigh", "max"].map((e) => el("option", { value: e, selected: (cfg.effort ?? "high") === e }, e)));
+  const budget = el("input", { type: "number", min: 10000, step: 10000, value: cfg.backendBudgetChars ?? 200000 });
+
+  return el("div", { class: "stack" },
+    credentialCard("anthropicApiKey", "Anthropic API key", "Used for the analysis. Stored in ~/.design-mediator/credentials.json on this computer (only your user can read it), never in the project."),
+    credentialCard("figmaToken", "Figma token", "Used to pull frames from Figma. Create one in Figma → Settings → Security → Personal access tokens (read access to files is enough)."),
+    el("div", { class: "card" },
+      el("div", { class: "row" }, el("h2", { style: "margin:0;flex:1" }, "Repos"), el("button", { class: "btn primary", onclick: addRepo }, "Add repo…")),
+      el("p", { class: "sub" }, "The folders to search for backend code: models, migrations, DTOs, controllers, legacy SQL."),
+      el("div", { class: "list" }, repoList)),
+    el("div", { class: "card" },
+      el("h2", {}, "Analysis settings"),
+      el("p", { class: "sub" }, "Defaults are fine to start with."),
+      el("datalist", { id: "models" }, ...["claude-opus-5-5", "claude-sonnet-5-5", "claude-fable-5-1"].map((m) => el("option", { value: m }))),
+      el("div", { class: "row" },
+        el("div", { class: "grow" }, el("label", {}, "Model"), modelInput),
+        el("div", { style: "width:140px" }, el("label", {}, "Effort"), effortSel),
+        el("div", { style: "width:200px" }, el("label", {}, "Backend code budget ", el("span", { class: "hint" }, "(chars)")), budget)),
+      el("div", { class: "row", style: "margin-top:16px" },
+        el("button", { class: "btn primary", onclick: async () => {
+          cfg.model = modelInput.value.trim() || "claude-opus-5-5";
+          cfg.effort = effortSel.value;
+          cfg.backendBudgetChars = Number(budget.value) || 200000;
+          await saveConfig("Settings saved");
+        } }, "Save settings"),
+        el("span", { class: "muted mono" }, state.configExists ? state.configPath : `Will be saved to ${state.configPath}`))));
+}
+
+// ---------- Features tab ----------
+function renderFeatures() {
+  const cfg = state.config;
+  const names = Object.keys(cfg.features);
+  if (state.selectedFeature && !cfg.features[state.selectedFeature]) state.selectedFeature = null;
+  if (!state.selectedFeature && names.length) state.selectedFeature = names[0];
+
+  const newFeature = () => {
+    const name = slug(prompt("Feature name (e.g. add-product)") || "");
+    if (!name) return;
+    if (cfg.features[name]) return toast("That name is taken");
+    cfg.features[name] = {};
+    state.selectedFeature = name; store("dm.feature", name);
+    render();
+  };
+
+  const list = el("div", { class: "list feature-list" },
+    names.length ? names.map((n) => el("button", { class: n === state.selectedFeature ? "active" : "", onclick: () => {
+      state.selectedFeature = n; store("dm.feature", n); render();
+    } }, n)) : el("div", { class: "empty" }, "No features yet"));
+
+  return el("div", { class: "split" },
+    el("div", { class: "stack" }, list, el("button", { class: "btn primary", style: "width:100%", onclick: newFeature }, "New feature")),
+    state.selectedFeature ? featureEditor(state.selectedFeature) : el("div", { class: "card" },
+      el("h2", {}, "Features"),
+      el("p", { class: "sub" }, "A feature is a set of Figma screens (like the Add Product flow) plus the repos to check them against. Create one to get started.")));
+}
+
+function featureEditor(name) {
+  const cfg = state.config;
+  const f = cfg.features[name];
+  const sourceMode = { value: f.designFile ? "file" : "figma" };
+  const figmaInput = el("input", { type: "text", placeholder: "https://www.figma.com/design/…?node-id=…", value: figmaLinkFor(f.figma) });
+  const figmaMsg = el("div", { class: "msg" });
+  const fileInput = el("input", { type: "text", class: "mono", placeholder: "/path/to/design-export.json", value: f.designFile ?? "" });
+  const desc = el("textarea", { placeholder: "One or two sentences of context for the analysis, e.g. what the user is trying to do." }, f.description ?? "");
+  const keywords = el("input", { type: "text", placeholder: "item, tbl_item, catalog", value: (f.keywords ?? []).join(", ") });
+  const allRepos = !f.repos;
+  const repoChecks = cfg.repos.map((r) => el("label", {}, el("input", { type: "checkbox", value: r.name, checked: allRepos || f.repos.includes(r.name) }), r.name));
+
+  const showFigmaParse = () => {
+    if (!figmaInput.value.trim()) { figmaMsg.textContent = ""; return; }
+    const p = parseFigmaLink(figmaInput.value);
+    figmaMsg.className = `msg ${p.error ? "bad" : "ok"}`;
+    figmaMsg.textContent = p.error ?? `File ${p.fileKey}, node ${p.nodeIds[0]}`;
+  };
+  figmaInput.addEventListener("input", showFigmaParse);
+  showFigmaParse();
+
+  const figmaPane = el("div", {}, el("label", {}, "Figma link ", el("span", { class: "hint" }, "(right-click a frame or section → Copy link to selection)")), figmaInput, figmaMsg);
+  const filePane = el("div", {}, el("label", {}, "Design export file ", el("span", { class: "hint" }, "(a saved Figma /nodes JSON, or a normalized { screens } file)")),
+    el("div", { class: "row" }, el("div", { class: "grow" }, fileInput), el("button", { class: "btn", onclick: async () => {
+      const p = await browse({ title: "Choose a design export (.json)", mode: "json", start: fileInput.value ? fileInput.value.replace(/[^\\/]+$/, "") : "" });
+      if (p) fileInput.value = p;
+    } }, "Browse…")));
+  const seg = el("div", { class: "seg" });
+  const setMode = (m) => {
+    sourceMode.value = m;
+    figmaPane.hidden = m !== "figma"; filePane.hidden = m !== "file";
+    seg.querySelectorAll("button").forEach((b) => b.classList.toggle("active", b.dataset.mode === m));
+  };
+  seg.append(
+    el("button", { "data-mode": "figma", onclick: () => setMode("figma") }, "Figma link"),
+    el("button", { "data-mode": "file", onclick: () => setMode("file") }, "Local file"));
+  setMode(sourceMode.value);
+
+  const save = async () => {
+    const next = { description: desc.value.trim() || undefined };
+    if (sourceMode.value === "figma") {
+      const p = parseFigmaLink(figmaInput.value);
+      if (p.error) { showFigmaParse(); return toast("Fix the Figma link first"); }
+      next.figma = { fileKey: p.fileKey, nodeIds: p.nodeIds };
+    } else {
+      if (!fileInput.value.trim()) return toast("Choose a design file first");
+      next.designFile = fileInput.value.trim();
+    }
+    const checked = repoChecks.map((l) => l.querySelector("input")).filter((i) => i.checked).map((i) => i.value);
+    if (cfg.repos.length && !checked.length) return toast("Pick at least one repo");
+    if (checked.length && checked.length < cfg.repos.length) next.repos = checked;
+    const kw = keywords.value.split(",").map((s) => s.trim()).filter(Boolean);
+    if (kw.length) next.keywords = kw;
+    cfg.features[name] = JSON.parse(JSON.stringify(next));
+    try { await saveConfig("Feature saved"); } catch (err) { toast(err.message); }
+    render();
+  };
+
+  return el("div", { class: "card" },
+    el("div", { class: "row" },
+      el("h2", { style: "margin:0;flex:1" }, name),
+      el("button", { class: "btn danger", onclick: async () => {
+        if (!confirm(`Delete feature "${name}"? Its past reports on disk are kept.`)) return;
+        delete cfg.features[name]; state.selectedFeature = null;
+        await saveConfig("Feature deleted"); render();
+      } }, "Delete")),
+    el("label", {}, "Design source"), seg, figmaPane, filePane,
+    el("label", {}, "Description ", el("span", { class: "hint" }, "(optional)")), desc,
+    el("label", {}, "Repos to check"),
+    cfg.repos.length ? el("div", { class: "checks" }, repoChecks) : el("p", { class: "muted", style: "margin:0" }, "Add repos on the Setup tab first."),
+    el("label", {}, "Extra search words ", el("span", { class: "hint" }, "(comma-separated: legacy table names and terms the design won't use)")), keywords,
+    el("div", { class: "row", style: "margin-top:20px" },
+      el("button", { class: "btn primary", onclick: save }, "Save feature"),
+      el("button", { class: "btn", onclick: async () => { await save(); state.runFeature = name; store("dm.runFeature", name); setTab("run"); } }, "Save and go to Run")));
+}
+
+// ---------- Run tab ----------
+const STATUS = {
+  matched: ["ok", "Matched"], missing_in_backend: ["bad", "Missing in backend"], missing_in_design: ["warn", "Missing in design"],
+  type_mismatch: ["warn", "Type mismatch"], validation_mismatch: ["warn", "Validation mismatch"],
+  naming_mismatch: ["info", "Naming mismatch"], unclear: ["muted", "Unclear"],
+};
+const ENDPOINT = { exists: ["ok", "Exists"], needs_change: ["warn", "Needs change"], missing: ["bad", "Missing"] };
+const PRIORITY = { blocker: ["bad", "Blocker"], high: ["warn", "High"], low: ["muted", "Low"] };
+const pill = ([kind, text]) => el("span", { class: `pill ${kind}` }, text);
+
+function renderRun() {
+  const names = Object.keys(state.config.features);
+  if (!names.length) {
+    return el("div", { class: "card" }, el("h2", {}, "Nothing to run yet"),
+      el("p", { class: "sub" }, "Add your repos on Setup and a feature on Features first."),
+      el("button", { class: "btn primary", onclick: () => setTab("features") }, "Go to Features"));
+  }
+  if (!state.runFeature || !state.config.features[state.runFeature]) state.runFeature = names[0];
+  const sel = el("select", { onchange: (e) => { state.runFeature = e.target.value; store("dm.runFeature", e.target.value); state.run = null; render(); loadLastRun(); } },
+    ...names.map((n) => el("option", { value: n, selected: n === state.runFeature }, n)));
+
+  const busy = state.run?.status === "running";
+  const missingKey = !state.creds.anthropicApiKey.set;
+  const controls = el("div", { class: "card" },
+    el("div", { class: "row" },
+      el("div", { style: "width:240px" }, el("label", { style: "margin-top:0" }, "Feature"), sel),
+      el("div", { class: "row", style: "align-self:flex-end" },
+        el("button", { class: "btn", disabled: busy, onclick: () => preview("design") }, "Preview design"),
+        el("button", { class: "btn", disabled: busy, onclick: () => preview("scan") }, "Preview backend scan"),
+        el("button", { class: "btn primary", disabled: busy || missingKey, onclick: startAnalyze }, "Analyze"))),
+    missingKey ? el("p", { class: "msg bad" }, "Add an Anthropic API key on the Setup tab to run the analysis. The previews work without one.") : null,
+    el("p", { class: "muted", style: "margin:12px 0 0" }, "Check the previews first: if the design fields or the backend files look wrong, fix the feature before spending an analysis on it."));
+
+  return el("div", { class: "stack" }, controls, runBody());
+}
+
+function runBody() {
+  const run = state.run;
+  if (!run) return el("div", { class: "card muted" }, "Choose an action above. A finished analysis is loaded automatically when there is one.");
+  if (run.status === "loading") return el("div", { class: "card" }, el("span", { class: "spinner" }), " Working…");
+  if (run.status === "error") return el("div", { class: "card" }, el("h2", {}, "Something went wrong"), el("p", { class: "msg bad" }, run.error),
+    run.log?.length ? el("div", { class: "log" }, run.log.map((l) => el("div", {}, l))) : null);
+  if (run.status === "running") return el("div", { class: "card" }, el("h2", {}, el("span", { class: "spinner" }), " Analyzing"),
+    el("div", { class: "log", style: "margin-top:12px" }, run.log.map((l) => el("div", {}, l))),
+    el("p", { class: "muted" }, `Started ${new Date(run.startedAt).toLocaleTimeString()}. You can leave this tab open; it updates by itself.`));
+  if (run.kind === "design") return designView(run.data);
+  if (run.kind === "scan") return scanView(run.data);
+  if (run.kind === "analysis") return analysisView(run.data);
+  return null;
+}
+
+async function preview(stage) {
+  state.run = { status: "loading" }; render();
+  try {
+    const data = await api("POST", `/api/features/${encodeURIComponent(state.runFeature)}/${stage}`, {});
+    state.run = { status: "done", kind: stage, data };
+  } catch (err) { state.run = { status: "error", error: err.message }; }
+  render();
+}
+
+async function startAnalyze() {
+  try {
+    const { jobId } = await api("POST", `/api/features/${encodeURIComponent(state.runFeature)}/analyze`, {});
+    store("dm.job", jobId);
+    pollJob(jobId);
+  } catch (err) { state.run = { status: "error", error: err.message }; render(); }
+}
+
+async function pollJob(jobId) {
+  try {
+    const job = await api("GET", `/api/jobs/${jobId}`);
+    if (job.feature !== state.runFeature) return;
+    if (job.status !== "running") forget("dm.job");
+    if (job.status === "running") {
+      state.run = { status: "running", log: job.log, startedAt: job.startedAt }; render();
+      setTimeout(() => pollJob(jobId), 1500);
+    } else if (job.status === "error") {
+      state.run = { status: "error", error: job.error, log: job.log }; render();
+    } else {
+      toast("Analysis finished");
+      await loadLastRun();
+    }
+  } catch { /* job gone (server restarted): fall back to the last saved run */ forget("dm.job"); await loadLastRun(); }
+}
+
+async function loadLastRun() {
+  const feature = state.runFeature;
+  try {
+    const last = await api("GET", `/api/features/${encodeURIComponent(feature)}/last-run`);
+    if (feature !== state.runFeature) return;
+    state.run = last ? { status: "done", kind: "analysis", data: last } : null;
+  } catch { state.run = null; }
+  render();
+}
+
+function designView(spec) {
+  return el("div", { class: "stack" }, ...spec.screens.map((s) => el("div", { class: "card" },
+    el("h2", {}, s.name),
+    el("p", { class: "sub" }, `${s.fields.length} field(s), ${s.actions.length} action(s)`),
+    el("div", { class: "table-wrap" }, el("table", {},
+      el("tr", {}, ...["Field", "Type", "Required", "Details"].map((h) => el("th", {}, h))),
+      ...s.fields.map((f) => el("tr", {},
+        el("td", {}, el("strong", {}, f.label), el("div", { class: "muted mono" }, f.component ?? "")),
+        el("td", {}, f.kind), el("td", {}, f.required ? "Yes" : ""),
+        el("td", {}, [f.placeholder && `Placeholder: ${f.placeholder}`, f.helperText && `Helper: ${f.helperText}`, f.options && `Options: ${f.options.join(", ")}`].filter(Boolean).map((t) => el("div", {}, t))))))),
+    s.actions.length ? el("p", {}, el("strong", {}, "Actions: "), s.actions.join(" · ")) : null,
+    s.texts.length ? el("p", { class: "muted" }, el("strong", {}, "Other text: "), s.texts.join(" · ")) : null)));
+}
+
+function scanView(r) {
+  const total = r.snippets.reduce((n, s) => n + s.chars, 0);
+  return el("div", { class: "card" },
+    el("h2", {}, `${r.snippets.length} of ${r.totalCandidates} backend snippets would be sent`),
+    el("p", { class: "sub" }, `${total.toLocaleString()} characters. Highest-scoring code first within the budget. If something important is missing, add its name to the feature's extra search words.`),
+    el("label", {}, "Search words"), el("div", { class: "chips" }, r.keywords.map((k) => el("span", { class: "chip" }, k))),
+    el("label", {}, "Snippets"),
+    el("div", { class: "list" }, [...r.snippets].sort((a, b) => b.score - a.score).map((s) => el("details", { class: "list-item", style: "display:block" },
+      el("summary", {}, el("span", { class: "pill muted", style: "margin-right:8px" }, `score ${s.score}`),
+        el("span", { class: "mono" }, `${s.repo}/${s.file}:${s.startLine}-${s.endLine}`), el("span", { class: "muted" }, ` · ${s.kind}`)),
+      el("pre", { style: "margin-top:8px" }, s.preview)))));
+}
+
+function analysisView(last) {
+  const a = last.analysis;
+  const filter = state.fieldFilter ?? "all";
+  const counts = {};
+  for (const f of a.fields) counts[f.status] = (counts[f.status] ?? 0) + 1;
+  const rows = a.fields.filter((f) => filter === "all" || f.status === filter);
+  const qList = (qs) => qs.length ? [...qs].sort((x, y) => ["blocker", "high", "low"].indexOf(x.priority) - ["blocker", "high", "low"].indexOf(y.priority))
+    .map((q) => el("div", { class: "q" }, pill(PRIORITY[q.priority]), el("div", {}, el("div", {}, q.question), el("div", { class: "muted" }, q.why))))
+    : [el("p", { class: "muted" }, "None.")];
+  const asText = (qs) => qs.map((q) => `- [${q.priority}] ${q.question}\n  Why: ${q.why}`).join("\n");
+
+  return el("div", { class: "stack" },
+    el("div", { class: "card" },
+      el("div", { class: "row" }, el("h2", { style: "margin:0;flex:1" }, "Summary"),
+        el("span", { class: "muted" }, `Finished ${new Date(last.finishedAt).toLocaleString()}`),
+        last.report ? el("button", { class: "btn", onclick: () => download(`${state.runFeature}-report.md`, last.report) }, "Download report.md") : null),
+      el("p", {}, a.summary),
+      el("p", { class: "muted mono", style: "margin:0" }, `Files saved in ${last.outDir}`)),
+    el("div", { class: "card" },
+      el("h2", {}, "Fields"),
+      el("div", { class: "chips", style: "margin:8px 0 12px" },
+        el("button", { class: `chip ${filter === "all" ? "active" : ""}`, onclick: () => { state.fieldFilter = "all"; render(); } }, `All ${a.fields.length}`),
+        ...Object.entries(counts).map(([k, n]) => el("button", { class: `chip ${filter === k ? "active" : ""}`, onclick: () => { state.fieldFilter = k; render(); } }, `${STATUS[k][1]} ${n}`))),
+      el("div", { class: "table-wrap" }, el("table", {},
+        el("tr", {}, ...["Screen", "Design field", "Backend field", "Status", "Notes"].map((h) => el("th", {}, h))),
+        ...rows.map((f) => el("tr", {},
+          el("td", { class: "muted" }, f.screen ?? "—"),
+          el("td", {}, f.designLabel ?? "—", f.designType ? el("div", { class: "muted" }, f.designType) : null),
+          el("td", {}, f.backendField ? el("span", { class: "mono" }, f.backendField) : "—", f.backendType ? el("div", { class: "muted" }, f.backendType) : null,
+            f.source ? el("div", { class: "muted mono" }, f.source) : null),
+          el("td", {}, pill(STATUS[f.status])),
+          el("td", {}, f.notes)))))),
+    el("div", { class: "card" },
+      el("h2", {}, "Endpoints"),
+      el("div", { class: "table-wrap" }, el("table", {},
+        el("tr", {}, ...["Status", "Endpoint", "Purpose", "Notes"].map((h) => el("th", {}, h))),
+        ...a.endpoints.map((e) => el("tr", {},
+          el("td", {}, pill(ENDPOINT[e.status])),
+          el("td", { class: "mono" }, `${e.method} ${e.path}`),
+          el("td", {}, e.purpose),
+          el("td", {}, e.notes, e.source ? el("div", { class: "muted mono" }, e.source) : null)))))),
+    el("div", { class: "card" },
+      el("div", { class: "row" }, el("h2", { style: "margin:0;flex:1" }, "Questions for design"), el("button", { class: "btn", onclick: () => copy(asText(a.questionsForDesign)) }, "Copy")),
+      ...qList(a.questionsForDesign)),
+    el("div", { class: "card" },
+      el("div", { class: "row" }, el("h2", { style: "margin:0;flex:1" }, "Questions for backend"), el("button", { class: "btn", onclick: () => copy(asText(a.questionsForBackend)) }, "Copy")),
+      ...qList(a.questionsForBackend)),
+    a.risks.length ? el("div", { class: "card" }, el("h2", {}, "Risks"), el("ul", {}, a.risks.map((r) => el("li", {}, r)))) : null,
+    el("div", { class: "card" },
+      el("div", { class: "row", style: "margin-bottom:12px" }, el("h2", { style: "margin:0;flex:1" }, "Frontend contract (draft)"),
+        el("button", { class: "btn", onclick: () => copy(a.frontendContract.typescript) }, "Copy contract.ts"),
+        el("button", { class: "btn", onclick: () => copy(a.frontendContract.mockJson) }, "Copy mock.json")),
+      el("pre", {}, a.frontendContract.typescript)));
+}
+
+// ---------- shell ----------
+function setTab(tab) { state.tab = tab; store("dm.tab", tab); render(); if (tab === "run" && !state.run) loadLastRun(); }
+function render() {
+  document.querySelectorAll("#nav button").forEach((b) => b.classList.toggle("active", b.dataset.tab === state.tab));
+  const view = state.tab === "setup" ? renderSetup() : state.tab === "features" ? renderFeatures() : renderRun();
+  $("#main").replaceChildren(view);
+}
+document.querySelectorAll("#nav button").forEach((b) => b.addEventListener("click", () => setTab(b.dataset.tab)));
+
+(async () => {
+  try {
+    await Promise.all([loadConfig(), loadCreds()]);
+    if (!recall("dm.tab") && state.config.repos.length && Object.keys(state.config.features).length) state.tab = "run";
+    setTab(state.tab);
+    const job = recall("dm.job");
+    if (state.tab === "run" && job) pollJob(job);
+  } catch (err) {
+    $("#main").replaceChildren(el("div", { class: "card" }, el("h2", {}, "Couldn't reach the local server"), el("p", { class: "msg bad" }, err.message)));
+  }
+})();
+</script>
+</body>
+</html>

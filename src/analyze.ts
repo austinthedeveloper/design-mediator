@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { z } from "zod";
+import { getCredential } from "./credentials.ts";
 import type { BackendSnippet, DesignSpec, MediatorConfig } from "./types.ts";
 
 const Source = z.string().describe('Where this came from, as "repo/path:line". Empty string if none.');
@@ -74,6 +75,12 @@ How to work:
 - Questions must be answerable and addressed to whoever can answer them. One decision per question.
 - The frontend contract should reflect what the API will most plausibly look like after the gaps are closed, with TODO comments where it depends on an open question.`;
 
+/** Uses a key saved from the UI when there's one; otherwise the SDK's usual env/profile lookup. */
+export function createClient(): Anthropic {
+  const apiKey = getCredential("anthropicApiKey");
+  return apiKey ? new Anthropic({ apiKey }) : new Anthropic();
+}
+
 export function buildPrompt(design: DesignSpec, snippets: BackendSnippet[], description?: string): string {
   const code = snippets
     .map((s) => `<snippet source="${s.repo}/${s.file}:${s.startLine}-${s.endLine}" kind="${s.kind}">\n${s.text}\n</snippet>`)
@@ -89,7 +96,7 @@ export function buildPrompt(design: DesignSpec, snippets: BackendSnippet[], desc
 export async function analyze(
   prompt: string,
   opts: { model: string; effort: NonNullable<MediatorConfig["effort"]> },
-  client: Anthropic = new Anthropic(),
+  client: Anthropic = createClient(),
 ): Promise<Analysis> {
   // Streamed so large outputs don't hit request timeouts; finalMessage() still gives parsed_output.
   const stream = client.beta.messages.stream({
@@ -101,7 +108,12 @@ export async function analyze(
     output_config: { effort: opts.effort, format: betaZodOutputFormat(AnalysisSchema) },
     messages: [{ role: "user", content: prompt }],
   });
-  const response = await stream.finalMessage();
+  let response;
+  try {
+    response = await stream.finalMessage();
+  } catch (err) {
+    throw new Error(describeApiError(err, opts.model));
+  }
 
   if (response.stop_reason === "refusal") {
     throw new Error(`Model declined the request: ${response.stop_details?.explanation ?? "no explanation"}`);
@@ -111,4 +123,27 @@ export async function analyze(
   }
   if (!response.parsed_output) throw new Error("Model response did not match the analysis schema");
   return response.parsed_output;
+}
+
+/** Plain-language versions of the API errors people actually hit. Most specific first. */
+export function describeApiError(err: unknown, model: string): string {
+  if (err instanceof Anthropic.AuthenticationError) {
+    return "Anthropic rejected the API key (401). Check that it was copied in full, or paste a new one on the Setup tab.";
+  }
+  if (err instanceof Anthropic.PermissionDeniedError) {
+    return `This API key isn't allowed to use ${model} (403). Try another model in Analysis settings or check the key's workspace.`;
+  }
+  if (err instanceof Anthropic.NotFoundError) {
+    return `Model "${model}" wasn't found (404). Check the model name in Analysis settings.`;
+  }
+  if (err instanceof Anthropic.RateLimitError) {
+    return "Anthropic is rate limiting this key (429). Wait a minute and try again.";
+  }
+  if (err instanceof Anthropic.APIConnectionError) {
+    return "Couldn't reach the Anthropic API. Check the internet connection.";
+  }
+  if (err instanceof Anthropic.APIError) {
+    return `Anthropic API error ${err.status ?? ""}: ${err.message}`.trim();
+  }
+  return err instanceof Error ? err.message : String(err);
 }

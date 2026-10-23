@@ -31,7 +31,7 @@ The report is something frontend can paste into a ticket or bring to a meeting. 
 - Unblock frontend on a new feature within minutes of the designs landing.
 - Make every claim checkable: cite code locations, never assume a field exists.
 - Work with a real monorepo, including legacy code that's still in the repo.
-- Stay cheap to run and easy to adopt: one CLI, one config file, no server.
+- Stay cheap to run and easy to adopt: one CLI or a local web page, one config file, nothing hosted.
 
 ## Non-goals (for now)
 
@@ -48,4 +48,4 @@ The report is something frontend can paste into a ticket or bring to a meeting. 
 
 ## Current status
 
-Version 0.1: a working CLI with sample data. Design extraction, backend scanning and report rendering are tested against the examples. The real Claude call has only been tested against a stubbed API, and live Figma fetching hasn't been tested yet. See [stories/backlog.md](stories/backlog.md).
+Version 0.2: a working CLI plus a local web UI (`npm run ui`), with sample data. Design extraction, backend scanning and report rendering are tested against the examples. The UI was checked in a browser. The real Claude call has reached the API (a fake key got the expected 401) but hasn't produced a real analysis yet, and live Figma fetching hasn't been tested yet. See [stories/backlog.md](stories/backlog.md).
